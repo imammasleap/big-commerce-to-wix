@@ -40,6 +40,22 @@ big_sub = read_csv(big_sub_in)
 # saveJson()
 
 
+def generateProductImageURLsList(product):
+    imageUrls = []
+    for attr, value in product.items():
+        if 'Product Image URL' in str(attr) and str(value).strip() != "":
+            imageUrls.append(value)
+    return ";".join(imageUrls)
+
+
+def generateProductsCollectionsList(product):
+    collectionsList = []
+    for attr, value in product.items():
+        if 'Category Name' in str(attr) and str(value).strip() != "":
+            collectionsList.append(value)
+    return ";".join(collectionsList)
+
+
 def generateNewCSVDictionary():
     final_data = []
 
@@ -66,7 +82,7 @@ def generateNewCSVDictionary():
                                     new_row_obj = {'handleId': sku['Product ID'].strip(), 'fieldType': 'Variant',
                                                    'name': '', 'description': '',
                                                    'productImageUrl': rule['Product Image URL - 1'].strip(),
-                                                   'price': '', "surcharge": 0.0, 'visible': 'TRUE',
+                                                   'price': 0, "surcharge": 0.0, 'visible': 'TRUE',
                                                    'inventory': 'InStock', 'weight': '', "collection": '',
                                                    "sku": sku['Product SKU'], "ribbon": '', "discountMode": '',
                                                    "discountValue": '',
@@ -99,7 +115,7 @@ def generateNewCSVDictionary():
                                     new_row_obj = {'handleId': sku['Product ID'].strip(), 'fieldType': 'Variant',
                                                    'name': '', 'description': '',
                                                    'productImageUrl': '',
-                                                   'price': '', "surcharge": 0.0, 'visible': 'TRUE',
+                                                   'price': 0, "surcharge": 0.0, 'visible': 'TRUE',
                                                    'inventory': 'InStock', 'weight': '', "collection": '',
                                                    "sku": sku['Product SKU'], "ribbon": '', "discountMode": '',
                                                    "discountValue": '',
@@ -122,12 +138,43 @@ def generateNewCSVDictionary():
                                                    "customTextCharLimit1": '', "customTextMandatory1": '', "brand": ''}
                                     products_variant.append(new_row_obj)
 
+                    if len(sku_list) > 0 and len(rule_list) == 0 and len(special_rule_list) == 0:
+                        for sku in sku_list:
+                            sku_product_name_description = "".join(
+                                re.split(r"[()\[\]]", sku['Product Name'].strip())[::2]).split('=')
+
+                            new_row_obj = {'handleId': sku['Product ID'].strip(), 'fieldType': 'Variant',
+                                           'name': '', 'description': '',
+                                           'productImageUrl': '',
+                                           'price': 0, "surcharge": 0.0, 'visible': 'TRUE',
+                                           'inventory': 'InStock', 'weight': '', "collection": '',
+                                           "sku": sku['Product SKU'], "ribbon": '', "discountMode": '',
+                                           "discountValue": '',
+                                           'productOptionName1': sku_product_name_description[0],
+                                           'productOptionType1': "DROP_DOWN",
+                                           'productOptionDescription1': sku_product_name_description[1],
+                                           'productOptionName2': '', 'productOptionType2': "",
+                                           'productOptionDescription2': '', "productOptionName3": '',
+                                           "productOptionType3": '', "productOptionDescription3": '',
+                                           "productOptionName4": '', "productOptionType4": '',
+                                           "productOptionDescription4": '', "productOptionName5": '',
+                                           "productOptionType5": '', "productOptionDescription5": '',
+                                           "productOptionName6": '', "productOptionType6": '',
+                                           "productOptionDescription6": '', "additionalInfoTitle1": '',
+                                           "additionalInfoDescription1": '', "additionalInfoTitle2": '',
+                                           "additionalInfoDescription2": '', "additionalInfoTitle3": '',
+                                           "additionalInfoDescription3": '', "additionalInfoTitle4": '',
+                                           "additionalInfoDescription4": '', "additionalInfoTitle5": '',
+                                           "additionalInfoDescription5": '', "customTextField1": '',
+                                           "customTextCharLimit1": '', "customTextMandatory1": '', "brand": ''}
+                            products_variant.append(new_row_obj)
+
                     if len(special_rule_list) > 0:
                         for special_rule in special_rule_list:
                             special_rule_product_name_description = "".join(
                                 re.split(r"[()\[\]]", special_rule['Product Name'].strip())[::2]).split('=')
 
-                            price = ''
+                            price = '0'
 
                             if '[ADD]' in special_rule['Price']:
                                 price = special_rule['Price'].replace('[ADD]', '+')
@@ -142,7 +189,7 @@ def generateNewCSVDictionary():
                             new_row_obj = {'handleId': special_rule['Product ID'].strip(), 'fieldType': 'Variant',
                                            'name': '', 'description': '',
                                            'productImageUrl': '',
-                                           'price': price,
+                                           'price': float(price),
                                            "surcharge": 0.0, 'visible': 'TRUE',
                                            'inventory': 'InStock', 'weight': '', "collection": '',
                                            "sku": special_rule['Product SKU'], "ribbon": '', "discountMode": '',
@@ -175,32 +222,94 @@ def generateNewCSVDictionary():
                     elif big_sub[j]['Item Type'].strip() == "Rule" and big_sub[j]['Product Name'].strip() == "":
                         rule_list.append(big_sub[j])
 
-            new_row_obj = {'handleId': current_product['Product ID'].strip(), 'fieldType': 'Variant',
-                           'name': current_product['Product Name'].strip(), 'description': current_product['Description'].strip(),
-                           'productImageUrl': '',
-                           'price': current_product['Price'].strip(), "surcharge": 0.0, 'visible': 'TRUE',
-                           'inventory': 'InStock', 'weight': '', "collection": current_product['Brand'],
-                           "sku": '', "ribbon": 'New', "discountMode": '',
+            # Generate images list
+            product_image_urls = generateProductImageURLsList(current_product)
+
+            # Generate collections list
+            product_collections = generateProductsCollectionsList(current_product)
+
+            # Generate product descriptions
+            name1 = ""
+            descriptions1 = []
+            name2 = ""
+            descriptions2 = []
+            name3 = ""
+            descriptions3 = []
+            name4 = ""
+            descriptions4 = []
+
+            if products_variant != []:
+                for pv in products_variant:
+                    if name1 == "":
+                        name1 = pv['productOptionName1']
+                        descriptions1.append(pv['productOptionDescription1'])
+                    elif name1 != "" and name1 == pv['productOptionName1']:
+                        descriptions1.append(pv['productOptionDescription1'])
+                    elif name1 != pv['productOptionName1']:
+                        name2 = pv['productOptionName1']
+                        descriptions2.append(pv['productOptionDescription1'])
+                    elif name2 != "" and name2 == pv['productOptionName1']:
+                        descriptions2.append(pv['productOptionDescription1'])
+                    elif name2 != pv['productOptionName1']:
+                        name3 = pv['productOptionName1']
+                        descriptions3.append(pv['productOptionDescription1'])
+                    elif name3 != "" and name3 == pv['productOptionName1']:
+                        descriptions3.append(pv['productOptionDescription1'])
+                    elif name4 != pv['productOptionName1']:
+                        name4 = pv['productOptionName1']
+                        descriptions4.append(pv['productOptionDescription1'])
+                    elif name4 != "" and name4 == pv['productOptionName1']:
+                        descriptions4.append(pv['productOptionDescription1'])
+
+                descriptions1 = ";".join(descriptions1) if descriptions1 != [] else ''
+                descriptions2 = ";".join(descriptions2) if descriptions1 != [] else ''
+                descriptions3 = ";".join(descriptions3) if descriptions1 != [] else ''
+                descriptions4 = ";".join(descriptions4) if descriptions1 != [] else ''
+
+            new_row_obj = {'handleId': current_product['Product ID'].strip(),
+                           'fieldType': 'Product',
+                           'name': current_product['Product Name'].strip(),
+                           'description': current_product['Description'].strip(),
+                           'productImageUrl': product_image_urls,
+                           'price': float(current_product['Price'].strip()),
+                           "surcharge": 0.0,
+                           'visible': 'TRUE',
+                           'inventory': 'InStock',
+                           'weight': current_product['Weight'].strip(),
+                           "collection": product_collections,
+                           "sku": '',
+                           "ribbon": 'New',
+                           "discountMode": '',
                            "discountValue": '',
-                           'productOptionName1': '',
+                           'productOptionName1': name1,
                            'productOptionType1': "DROP_DOWN",
-                           'productOptionDescription1': '',
-                           'productOptionName2': '', 'productOptionType2': "",
-                           'productOptionDescription2': '', "productOptionName3": '',
-                           "productOptionType3": '', "productOptionDescription3": '',
-                           "productOptionName4": '', "productOptionType4": '',
-                           "productOptionDescription4": '', "productOptionName5": '',
-                           "productOptionType5": '', "productOptionDescription5": '',
-                           "productOptionName6": '', "productOptionType6": '',
-                           "productOptionDescription6": '', "additionalInfoTitle1": '',
+                           'productOptionDescription1': descriptions1,
+                           'productOptionName2': name2,
+                           'productOptionType2': "DROP_DOWN",
+                           'productOptionDescription2': descriptions2,
+                           "productOptionName3": name3,
+                           "productOptionType3": 'DROP_DOWN',
+                           "productOptionDescription3": descriptions3,
+                           "productOptionName4": name4,
+                           "productOptionType4": 'DROP_DOWN',
+                           "productOptionDescription4": descriptions4,
+                           "productOptionName5": '',
+                           "productOptionType5": '',
+                           "productOptionDescription5": '',
+                           "productOptionName6": '',
+                           "productOptionType6": '',
+                           "productOptionDescription6": '',
+                           "additionalInfoTitle1": '',
                            "additionalInfoDescription1": '', "additionalInfoTitle2": '',
                            "additionalInfoDescription2": '', "additionalInfoTitle3": '',
                            "additionalInfoDescription3": '', "additionalInfoTitle4": '',
                            "additionalInfoDescription4": '', "additionalInfoTitle5": '',
                            "additionalInfoDescription5": '', "customTextField1": '',
-                           "customTextCharLimit1": '', "customTextMandatory1": '', "brand": current_product['Brand']}
-            products_variant.append(new_row_obj)
+                           "customTextCharLimit1": '', "customTextMandatory1": '',
+                           "brand": current_product['Brand'].strip()}
 
+            final_data.append(new_row_obj)
+            final_data.extend(products_variant)
 
     with open('final-json/final_data.json', 'w') as outfile:
         json.dump(final_data, outfile)
@@ -208,5 +317,36 @@ def generateNewCSVDictionary():
     return final_data
 
 
-generateNewCSVDictionary()
+# generateNewCSVDictionary()
 
+
+def dictionaryToCSV():
+    finalCSVDictionary = generateNewCSVDictionary()
+
+    csv_file = "final-file/final_data.csv"
+
+    csv_columns = ["handleId", "fieldType", "name", "description", "productImageUrl", "price", "surcharge", "visible",
+                   "inventory", "weight", "collection", "sku", "ribbon", "discountMode", "discountValue",
+                   "productOptionName1", "productOptionType1", "productOptionDescription1", "productOptionName2",
+                   "productOptionType2", "productOptionDescription2", "productOptionName3", "productOptionType3",
+                   "productOptionDescription3", "productOptionName4", "productOptionType4", "productOptionDescription4",
+                   "productOptionName5", "productOptionType5", "productOptionDescription5", "productOptionName6",
+                   "productOptionType6", "productOptionDescription6", "additionalInfoTitle1",
+                   "additionalInfoDescription1", "additionalInfoTitle2", "additionalInfoDescription2",
+                   "additionalInfoTitle3", "additionalInfoDescription3", "additionalInfoTitle4",
+                   "additionalInfoDescription4", "additionalInfoTitle5", "additionalInfoDescription5",
+                   "additionalInfoTitle6", "additionalInfoDescription6", "additionalInfoTitle7",
+                   "additionalInfoDescription7", "additionalInfoTitle8", "additionalInfoDescription8",
+                   "customTextField1", "customTextCharLimit1", "customTextMandatory1", "brand"]
+
+    try:
+        with open(csv_file, 'w', newline='', encoding="utf8") as csvFile:
+            writer = csv.DictWriter(csvFile, fieldnames=csv_columns)
+            writer.writeheader()
+            for data in finalCSVDictionary:
+                writer.writerow(data)
+    except IOError:
+        print("I/O error")
+
+
+dictionaryToCSV()
