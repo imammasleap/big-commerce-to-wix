@@ -201,10 +201,10 @@ def generateNewCSVDictionary():
                     elif big_sub[j]['Item Type'].strip() == "Rule" and big_sub[j]['Product Name'].strip() == "":
                         rule_list.append(big_sub[j])
 
-            px = list(set(products_variant))
+            unique_products_variant_list = list(set(products_variant))
             products_variant = []
-            for x in px:
-                products_variant.append(json.loads(str(x)))
+            for product in unique_products_variant_list:
+                products_variant.append(json.loads(str(product)))
 
             # Generate images list
             product_image_urls = generateProductImageURLsList(current_product)
@@ -224,6 +224,7 @@ def generateNewCSVDictionary():
 
             if products_variant:
                 for pv in products_variant:
+                    pv = dict(pv)
                     if name1 == "":
                         name1 = pv['productOptionName1']
                         descriptions1.append(pv['productOptionDescription1'])
