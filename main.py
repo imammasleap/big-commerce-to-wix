@@ -61,8 +61,8 @@ def generateNewCSVDictionary():
 
     for i in range(len(big_sub)):
         if big_sub[i]['Item Type'].strip() == "Product":
-
             current_product = big_sub[i]
+            product_id = current_product['Product ID'].strip()
             products_variant = []
 
             sku_list = []
@@ -70,7 +70,6 @@ def generateNewCSVDictionary():
             special_rule_list = []
 
             for j in range(i + 1, len(big_sub)):
-
                 if j == len(big_sub)-1:
                     if big_sub[j]['Item Type'].strip() == "SKU":
                         sku_list.append(big_sub[j])
@@ -91,7 +90,7 @@ def generateNewCSVDictionary():
                             sku_product_name_description = "".join(
                                 re.split(r"[()\[\]]", sku['Product Name'].strip())[::2]).split('=')
 
-                            new_row_obj = {'handleId': sku['Product ID'].strip(), 'fieldType': 'Variant',
+                            new_row_obj = {'handleId': product_id, 'fieldType': 'Variant',
                                            'name': '', 'description': '',
                                            'productImageUrl': products_image,
                                            'price': 0, "surcharge": 0.0, 'visible': 'TRUE',
@@ -121,7 +120,7 @@ def generateNewCSVDictionary():
                             sku_product_name_description = "".join(
                                 re.split(r"[()\[\]]", sku['Product Name'].strip())[::2]).split('=')
 
-                            new_row_obj = {'handleId': sku['Product ID'].strip(), 'fieldType': 'Variant',
+                            new_row_obj = {'handleId': product_id, 'fieldType': 'Variant',
                                            'name': '', 'description': '',
                                            'productImageUrl': '',
                                            'price': 0, "surcharge": 0.0, 'visible': 'TRUE',
@@ -165,11 +164,11 @@ def generateNewCSVDictionary():
                                     price = "+" + str(float(big_sub[i]['Price']) - float(
                                         special_rule['Price'].replace('[FIXED]', '')))
 
-                            new_row_obj = {'handleId': special_rule['Product ID'].strip(), 'fieldType': 'Variant',
+                            new_row_obj = {'handleId': product_id, 'fieldType': 'Variant',
                                            'name': '', 'description': '',
                                            'productImageUrl': '',
-                                           'price': float(price),
-                                           "surcharge": 0.0, 'visible': 'TRUE',
+                                           'price': 0,
+                                           "surcharge": float(price), 'visible': 'TRUE',
                                            'inventory': 'InStock', 'weight': '', "collection": '',
                                            "sku": special_rule['Product SKU'], "ribbon": '', "discountMode": '',
                                            "discountValue": '',
